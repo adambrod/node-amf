@@ -229,12 +229,13 @@ AMFSerializer.prototype.writeObject = function( value ){
 	// flag with instance, no traits, no externalizable
 	this.writeU29( 11 );
 	// Override object type if present
-	if(value['type'] != null) {
-		this.writeUTF8(value['type']);
-	} else {
-		this.writeUTF8('Object');
-	}
-	// write serializable properties
+  if(value['serialize_amf_type'] != null) {
+    this.writeUTF8(value['serialize_amf_type']);
+  } else if(value['type'] != null) {
+    this.writeUTF8(value['type']);
+  } else {
+    this.writeUTF8('Object');
+  }	// write serializable properties
 	for( var s in value ){
 		if( typeof value[s] !== 'function' ){
 			this.writeUTF8(s);
@@ -265,7 +266,10 @@ AMFSerializer.prototype.writeDate = function( d ){
 AMFSerializer.prototype.writeNumber = function( value, writeMarker ){
 	// serialize as integers if possible
 	var n = parseInt( value );
-	if( n === value && n >= 0 && n < 0x20000000 ){
+	// NOTE: writing large integers as doubles due to https://github.com/timwhitlock/node-amf/issues/10
+	// original largest size was 0x20000000
+	if( n === value && n >= 0 && n < 0x00200000 ){
+
 		return this.writeU29( value, writeMarker );
 	}
 	return this.writeDouble( value, writeMarker );
